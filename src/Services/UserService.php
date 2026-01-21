@@ -5,6 +5,8 @@ namespace Larawizards\LaraOAuth2Client\Services;
 use Larawizards\LaraOAuth2Client\Models\OAuth2Token;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -27,8 +29,10 @@ class UserService
             ->orWhere($emailField, $attributes[$emailField] ?? null)
             ->first();
 
+        $isNewUser = false;
         if (! $user && config('lara-oauth2-client.auto_create_users', true)) {
             $user = new $userModel();
+            $isNewUser = true;
         }
 
         if ($user) {
@@ -37,6 +41,11 @@ class UserService
                 if ($value !== null) {
                     $user->{$key} = $value;
                 }
+            }
+
+            // Generate a random password for new OAuth2 users
+            if ($isNewUser && ! $user->password) {
+                $user->password = Hash::make(Str::random(60));
             }
 
             // Set email verified if not already set

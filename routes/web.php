@@ -2,12 +2,17 @@
 
 use Larawizards\LaraOAuth2Client\Http\Controllers\OAuth2Controller;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
+// Public routes - no authentication required
 Route::get('/redirect', [OAuth2Controller::class, 'redirect'])
-    ->name('oauth2.redirect');
-
+    ->name('oauth2.redirect')
+    ->middleware('web');
+    
+// Callback route - must be public (no auth middleware)
 Route::get('/callback', [OAuth2Controller::class, 'callback'])
-    ->name('oauth2.callback');
+    ->name('oauth2.callback')
+    ->middleware('web');
 
 Route::post('/logout', [OAuth2Controller::class, 'logout'])
     ->middleware('auth')

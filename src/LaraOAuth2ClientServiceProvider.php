@@ -8,7 +8,6 @@ use Larawizards\LaraOAuth2Client\Services\UserService;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Fortify;
 
 class LaraOAuth2ClientServiceProvider extends ServiceProvider
 {
@@ -24,12 +23,12 @@ class LaraOAuth2ClientServiceProvider extends ServiceProvider
 
         $this->app->singleton(OAuth2Client::class, function ($app) {
             return new OAuth2Client(
-                config('lara-oauth2-client.client_id'),
-                config('lara-oauth2-client.client_secret'),
-                config('lara-oauth2-client.redirect_uri'),
-                config('lara-oauth2-client.authorization_url'),
-                config('lara-oauth2-client.token_url'),
-                config('lara-oauth2-client.user_info_url'),
+                config('lara-oauth2-client.client_id', ''),
+                config('lara-oauth2-client.client_secret', ''),
+                config('lara-oauth2-client.redirect_uri', '/oauth2/callback'),
+                config('lara-oauth2-client.authorization_url', ''),
+                config('lara-oauth2-client.token_url', ''),
+                config('lara-oauth2-client.user_info_url', ''),
                 config('lara-oauth2-client.scopes', [])
             );
         });
@@ -116,9 +115,9 @@ class LaraOAuth2ClientServiceProvider extends ServiceProvider
             return;
         }
 
-        if (class_exists(Fortify::class)) {
+        if (class_exists(\Laravel\Fortify\Fortify::class)) {
             // Add SSO login view
-            Fortify::loginView(function () {
+            \Laravel\Fortify\Fortify::loginView(function () {
                 return view('lara-oauth2-client::sso-login');
             });
         }

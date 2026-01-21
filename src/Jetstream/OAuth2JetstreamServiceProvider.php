@@ -3,7 +3,6 @@
 namespace Larawizards\LaraOAuth2Client\Jetstream;
 
 use Illuminate\Support\ServiceProvider;
-use Laravel\Jetstream\Jetstream;
 
 class OAuth2JetstreamServiceProvider extends ServiceProvider
 {

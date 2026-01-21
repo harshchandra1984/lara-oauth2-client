@@ -29,7 +29,7 @@ class OAuth2Client
     ) {
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->redirectUri = $redirectUri;
+        $this->redirectUri = $this->normalizeRedirectUri($redirectUri);
         $this->authorizationUrl = $authorizationUrl;
         $this->tokenUrl = $tokenUrl;
         $this->userInfoUrl = $userInfoUrl;
@@ -113,6 +113,25 @@ class OAuth2Client
         ]);
 
         return json_decode($response->getBody()->getContents(), true);
+    }
+
+    /**
+     * Normalize redirect URI to ensure it's a full URL.
+     */
+    protected function normalizeRedirectUri(string $redirectUri): string
+    {
+        // If it's already a full URL, return as is
+        if (filter_var($redirectUri, FILTER_VALIDATE_URL)) {
+            return $redirectUri;
+        }
+
+        // If it starts with /, prepend the app URL
+        if (str_starts_with($redirectUri, '/')) {
+            return url($redirectUri);
+        }
+
+        // Otherwise, assume it's a path and prepend /
+        return url('/'.$redirectUri);
     }
 
     /**

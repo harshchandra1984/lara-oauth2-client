@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class OAuth2Controller extends Controller
@@ -49,13 +50,14 @@ class OAuth2Controller extends Controller
         $loginRoute = config('lara-oauth2-client.login_route', 'login');
 
         if ($error) {
+            Log::error('OAuth2 callback error', ['error' => $error, 'error_description' => $request->get('error_description')]);
             return redirect()->route($loginRoute)
                 ->withErrors(['oauth2' => "OAuth2 error: {$error}"]);
         }
 
         if (! $code || ! $state) {
             return redirect()->route($loginRoute)
-                ->withErrors(['oauth2' => 'Invalid OAuth2 callback parameters']);
+                ->withErrors(['oauth2' => 'Invalid OAuth2 callback parameters. Missing code or state.']);
         }
 
         try {
@@ -64,9 +66,17 @@ class OAuth2Controller extends Controller
 
             // Get user information
             $userInfo = $this->oauth2Client->getUserInfo($tokenData['access_token']);
+            // Log the FULL user info response to debug mapping issues
+            Log::info('OAuth2 user info received', [
+                'user_id' => $userInfo['id'] ?? 'unknown',
+                'email' => $userInfo['email'] ?? 'unknown',
+                'full_response' => $userInfo,
+                'all_keys' => array_keys($userInfo ?? []),
+            ]);
 
             // Create or update user
             $user = $this->userService->createOrUpdateUser($userInfo, $tokenData);
+            Log::info('OAuth2 user created/updated', ['user_id' => $user->id]);
 
             // Authenticate user
             Auth::login($user, config('lara-oauth2-client.remember_me', true));
@@ -84,8 +94,13 @@ class OAuth2Controller extends Controller
                 }
             });
 
+            Log::info('OAuth2 authentication successful', ['redirect_to' => $intendedUrl]);
             return redirect($intendedUrl)->with('success', 'Successfully authenticated via SSO');
         } catch (\Exception $e) {
+            Log::error('OAuth2 authentication failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return redirect()->route($loginRoute)
                 ->withErrors(['oauth2' => 'Authentication failed: '.$e->getMessage()]);
         }
